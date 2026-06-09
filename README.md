@@ -1,6 +1,6 @@
-# HTMX + Hono + Cloudflare Workers Starter
+# Arcblog
 
-A minimal starter for building web apps with HTMX, Hono, and Tailwind CSS on Cloudflare Workers.
+High-performance blogging platform. It's not the best, but it's mine.
 
 ## Quick Start
 
@@ -37,12 +37,6 @@ Visit http://localhost:8787 to see your new app!
 - **Tailwind CSS** built locally
 - **KV** binding configured for local dev
 - **Static files** served from `public/`
-
-## API Routes
-
-- `GET /` - Serves `public/index.html`
-- `GET/POST /kv` - KV store demo
-- `GET /time` - Server time endpoint
 
 ## Deployment
 

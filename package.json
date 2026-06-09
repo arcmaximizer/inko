@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.2.0",
-    "hono": "^4.12.2"
+    "hono": "^4.12.2",
+    "trix": "^2.1.19"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
