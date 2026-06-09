@@ -1,0 +1,25 @@
+{
+  "name": "htmx-hono-cf-starter",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "bun@1.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"tailwindcss -i ./src/style.css -o ./public/style.css --watch\" \"wrangler dev\"",
+    "build": "bunx @tailwindcss/cli -i ./src/style.css -o ./public/style.css --watch",
+    "deploy": "bun run build && wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.2.0",
+    "hono": "^4.12.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.2.0",
+    "wrangler": "^4.67.0"
+  }
+}
