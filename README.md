@@ -22,13 +22,13 @@ Visit http://localhost:8787 to see your new app!
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `bun run dev` | Start local dev server |
-| `bun run build` | Build Tailwind CSS |
-| `bun run deploy` | Build and deploy to Cloudflare |
-| `bun run typecheck` | Type check |
-| `bun run build:css` | Build Tailwind CSS |
+| Command             | Description                    |
+| ------------------- | ------------------------------ |
+| `bun run dev`       | Start local dev server         |
+| `bun run build`     | Build Tailwind CSS             |
+| `bun run deploy`    | Build and deploy to Cloudflare |
+| `bun run typecheck` | Type check                     |
+| `bun run build:css` | Build Tailwind CSS             |
 
 ## Features
 
