@@ -8,11 +8,13 @@ type PostProps = {
 
 const PostView: FC<PostProps> = (props) => {
   return (
-    <div class="max-w-screen-md mx-auto text-center space-y-2">
-      <h1 class="text-4xl font-semibold">{props.title}</h1>
-      <p>{props.desc}</p>
-      <div class="rounded w-full bg-red-200 aspect-[16/9]" />
-      <div class="text-left">{props.children}</div>
+    <div class="max-w-screen-lg mx-auto text-center">
+      <section class="max-w-screen-md mx-auto space-y-4">
+        <h1 class="text-4xl font-semibold">{props.title}</h1>
+        <p>{props.desc}</p>
+        <div class="rounded-xl w-full bg-linear-to-tr from-red-200 to-blue-400 aspect-[16/9]" />
+      </section>
+      <div class="text-left mt-4">{props.children}</div>
     </div>
   );
 };
