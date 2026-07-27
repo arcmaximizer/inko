@@ -9,6 +9,7 @@ directory = "./public"
 [observability]
 enabled = true
 
-[[kv_namespaces]]
-binding = "MY_KV"
-id = "local"
+[[d1_databases]]
+binding = "DB"
+database_name = "inko-data"
+database_id = "inko-data"

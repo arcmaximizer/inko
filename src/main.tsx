@@ -1,19 +1,23 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { KVNamespace } from "@cloudflare/workers-types";
+import type { D1Database } from "@cloudflare/workers-types";
 import type { FC } from "hono/jsx";
 
 import Layout from "./components/layout.tsx";
 import PostView from "./views/post.tsx";
 
-type Env = {
-  MY_KV: KVNamespace;
+export type Env = {
+  DB: D1Database;
   ASSETS: Fetcher;
 };
 
 const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", cors());
+
+app.get("/", async (c) => {
+  return c.html(<Layout title="Blog">i'm a homepage</Layout>);
+});
 
 app.get("/post/:id", async (c) => {
   /*
