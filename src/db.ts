@@ -1,7 +1,7 @@
 import type { Env } from "./main.tsx";
 import { error, AppError } from "./lib/error";
 
-interface Post {
+export interface Post {
   id: number;
   title: string;
   subtitle?: string;
@@ -12,19 +12,21 @@ interface Post {
   is_draft: boolean;
 }
 
-async function getPosts(env: Env, limit?: number) {
-  const limitFloored = Math.floor(limit ?? 0);
-
+export async function getPosts(
+  env: Env,
+  start?: number,
+  limit?: number,
+): Promise<Post[]> {
   const { results } = await env.DB.prepare(
-    "SELECT * FROM posts ORDER BY published_at DESC LIMIT (?)",
+    "SELECT * FROM posts WHERE id <= (?) ORDER BY published_at DESC LIMIT (?)",
   )
-    .bind(limitFloored != 0 ? limitFloored : 2_000_000_000)
+    .bind(start ?? 2_000_000_000, limit ?? 2_000_000_000)
     .run();
 
-  return results;
+  return results as unknown as Post[];
 }
 
-async function getPost(
+export async function getPost(
   env: Env,
   id: number,
 ): Promise<Post | null | undefined | AppError> {
@@ -35,7 +37,7 @@ async function getPost(
   return result as unknown as Post | undefined | null;
 }
 
-async function createPost(
+export async function createPost(
   env: Env,
   post: Omit<Post, "id">,
 ): Promise<number | AppError> {
@@ -67,7 +69,7 @@ async function createPost(
   return result?.id as number;
 }
 
-async function editPost(
+export async function editPost(
   env: Env,
   data: Partial<Post> & { id: number },
 ): Promise<Post | AppError> {

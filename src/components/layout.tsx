@@ -12,11 +12,12 @@ const Layout = (props: LayoutProps) => {
       </head>
 
       <body>
-        <div className="p-4">
-          <header className="text-xl mb-2">{props.title}</header>
+        <header className="fixed text-xl px-4 h-11 py-2 border-b w-full bg-white">
+          {props.title}
+        </header>
+        <div className="h-11" />
 
-          {props.children}
-        </div>
+        {props.children}
       </body>
     </html>
   );
