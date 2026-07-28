@@ -12,7 +12,14 @@ export default function DashboardPostsView({ posts }: DPVProps) {
       {posts.length == 0 && (
         <p>
           There doesn't seem to be any posts here.{" "}
-          <NavLink href="/editor/new">Create one?</NavLink>
+          <NavLink
+            hx-boost="true"
+            href="/editor/new"
+            hx-post="/editor/new"
+            hx-trigger="click"
+          >
+            Create one?
+          </NavLink>
         </p>
       )}
       <ul>{cards}</ul>

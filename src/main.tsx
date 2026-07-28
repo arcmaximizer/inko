@@ -63,7 +63,6 @@ app.get("/editor/new", async (c) => {
   // Create a new post
   const id = await createPost(c.env, {
     title: "Untitled",
-    updated_at: new Date().toISOString(),
     is_draft: true,
   });
 

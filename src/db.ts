@@ -39,7 +39,7 @@ export async function getPost(
 
 export async function createPost(
   env: Env,
-  post: Omit<Post, "id">,
+  post: Omit<Post, "id" | "updated_at"> & { updated_at?: string },
 ): Promise<number | AppError> {
   const {
     is_draft,
