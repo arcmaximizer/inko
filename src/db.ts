@@ -5,7 +5,7 @@ export interface Post {
   id: number;
   title: string;
   subtitle?: string;
-  html_content?: string;
+  editor_content?: string;
   post_image_url?: string;
   published_at?: string;
   updated_at: string;
@@ -44,7 +44,7 @@ export async function createPost(
   const {
     is_draft,
     title,
-    html_content,
+    editor_content,
     subtitle,
     post_image_url,
     published_at,
@@ -52,13 +52,14 @@ export async function createPost(
   } = post;
 
   const date = new Date().toISOString();
+
   const result = await env.DB.prepare(
-    "INSERT INTO posts (is_draft, title, html_content, subtitle, post_image_url, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    "INSERT INTO posts (is_draft, title, editor_content, subtitle, post_image_url, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
   )
     .bind(
       is_draft,
       title,
-      html_content,
+      editor_content ?? "",
       subtitle ?? null,
       post_image_url ?? null,
       published_at ?? date,
@@ -79,7 +80,7 @@ export async function editPost(
   const templates: Templates = {
     is_draft: "is_draft = ?",
     title: "title = ?",
-    html_content: "html_content = ?",
+    editor_content: "editor_content = ?",
     subtitle: "subtitle = ?",
     post_image_url: "post_image_url = ?",
     published_at: "published_at = ?",

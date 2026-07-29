@@ -5,6 +5,8 @@ import type { FC } from "hono/jsx";
 
 import { getPost, getPosts, createPost } from "./db";
 
+import { QuillDeltaToHtmlConverter } from "quill-delta-to-html";
+
 import Layout from "./components/layout.tsx";
 import PostView from "./views/post.tsx";
 import EditorView from "./views/editor.tsx";
@@ -59,7 +61,7 @@ app.get("/dashboard/settings", async (c) => {
   );
 });
 
-app.get("/editor/new", async (c) => {
+app.post("/editor/new", async (c) => {
   // Create a new post
   const id = await createPost(c.env, {
     title: "Untitled",
@@ -70,7 +72,30 @@ app.get("/editor/new", async (c) => {
     throw console.error(id);
   }
 
-  return c.redirect("/editor/" + id, 302);
+  c.header("HX-Location", "/editor/" + id);
+  return c.text("New post created. ID is " + id);
+  //return c.redirect("/editor/" + id, 302);
+});
+
+app.get("/editor/:id", async (c) => {
+  const id = c.req.param("id");
+
+  // Fetch the post
+  const post = await getPost(c.env, Number(id));
+  if (post instanceof Error) {
+    // Return the error page
+    throw post;
+  }
+
+  if (!post) {
+    return c.html(notFoundPage, 404);
+  }
+
+  return c.html(
+    <Layout title="Blog" noHeader>
+      <EditorView post={post} />
+    </Layout>,
+  );
 });
 
 const errorPage = (
@@ -94,14 +119,19 @@ app.get("/post/:id", async (c) => {
     throw post;
   }
 
-  if (!post) {
+  if (!post || !post.editor_content) {
     return c.html(notFoundPage, 404);
   }
+
+  const delta = JSON.parse(post.editor_content); // the ops array you stored
+
+  const converter = new QuillDeltaToHtmlConverter(delta.ops, {});
+  const html = converter.convert();
 
   return c.html(
     <Layout title="Blog">
       <PostView title={post.title} desc={post.subtitle ?? ""}>
-        <div dangerouslySetInnerHTML={{ __html: post.html_content ?? "" }} />
+        <div dangerouslySetInnerHTML={{ __html: html }} />
       </PostView>
     </Layout>,
   );

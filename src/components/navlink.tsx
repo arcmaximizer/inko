@@ -15,6 +15,7 @@ export default function NavLink(
         props["class"],
       )}
       {...props}
+      hx-boost
     >
       {props.children}
     </a>

@@ -12,10 +12,14 @@ const Layout = (props: LayoutProps) => {
       </head>
 
       <body>
-        <header className="fixed text-xl px-4 h-11 py-2 border-b w-full bg-white">
-          {props.title}
-        </header>
-        <div className="h-11" />
+        {!props.noHeader && (
+          <>
+            <header className="fixed text-xl px-4 h-11 py-2 border-b w-full bg-white">
+              {props.title}
+            </header>
+            <div className="h-11" />
+          </>
+        )}
 
         {props.children}
       </body>
@@ -25,6 +29,7 @@ const Layout = (props: LayoutProps) => {
 
 export interface LayoutProps extends PropsWithChildren {
   title: string;
+  noHeader?: boolean;
 }
 
 export default Layout;
