@@ -9,7 +9,7 @@ export interface Post {
   post_image_url?: string;
   published_at?: string;
   updated_at: string;
-  is_draft: boolean;
+  is_published: 0 | 1;
 }
 
 export async function getPosts(
@@ -42,7 +42,7 @@ export async function createPost(
   post: Omit<Post, "id" | "updated_at"> & { updated_at?: string },
 ): Promise<number | AppError> {
   const {
-    is_draft,
+      is_published,
     title,
     editor_content,
     subtitle,
@@ -54,10 +54,10 @@ export async function createPost(
   const date = new Date().toISOString();
 
   const result = await env.DB.prepare(
-    "INSERT INTO posts (is_draft, title, editor_content, subtitle, post_image_url, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    "INSERT INTO posts (is_published, title, editor_content, subtitle, post_image_url, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
   )
     .bind(
-      is_draft,
+    is_published,
       title,
       editor_content ?? "",
       subtitle ?? null,
@@ -72,13 +72,13 @@ export async function createPost(
 
 export async function editPost(
   env: Env,
-  data: Partial<Post> & { id: number },
+  data: Partial<Omit<Post, "id">> & { id: number },
 ): Promise<Post | AppError> {
   type PartialPostKey = keyof Omit<Post, "id">;
   type Templates = Record<PartialPostKey, string>;
 
   const templates: Templates = {
-    is_draft: "is_draft = ?",
+    is_published: "is_published = ?",
     title: "title = ?",
     editor_content: "editor_content = ?",
     subtitle: "subtitle = ?",
@@ -91,6 +91,8 @@ export async function editPost(
   let values = [];
 
   for (let k in data) {
+    if (k == "id") continue;
+
     const key = k as PartialPostKey;
     const value = data[key];
 
@@ -113,16 +115,16 @@ export async function editPost(
   // This is a kind of publishing
   if (
     !statements.includes("published_at") &&
-    statements.includes("is_draft") &&
-    data.is_draft == false
+    statements.includes("is_published") &&
+    data.is_published == 1
   ) {
     statements.push("published_at");
     values.push(date);
   }
 
-  const compiled = env.DB.prepare(
-    `UPDATE posts SET ${statements.map((k) => templates[k]).join(", ")} WHERE id = ? RETURNING *`,
-  ).bind(values, data.id);
+  const statement = `UPDATE posts SET ${statements.map((k) => templates[k]).join(", ")} WHERE id = ? RETURNING *`;
+
+  const compiled = env.DB.prepare(statement).bind(...values, data.id);
 
   const result = await compiled.run();
   if (result.meta.rows_written != 1) {

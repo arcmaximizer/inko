@@ -51,10 +51,7 @@ export default function EditorView(props: EditorProps) {
           <div class="w-full aspect-[3/2] border max-w-screen-sm mx-auto" />
         )}
         <div class="mb-8" />
-        <div
-          id="editor"
-          dangerouslySetInnerHTML={{ __html: props.post.editor_content ?? "" }}
-        ></div>
+        <div id="editor"></div>
       </div>
 
       <script
@@ -63,6 +60,10 @@ export default function EditorView(props: EditorProps) {
 const quill = new Quill('#editor', {
   theme: 'snow'
 });
+
+const initialContent = ${props.post.editor_content}
+
+quill.setContents(initialContent)
 
 function syncQuill() {
   document.getElementById('content').value = JSON.stringify(quill.getContents());

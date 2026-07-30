@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import type { D1Database } from "@cloudflare/workers-types";
 import type { FC } from "hono/jsx";
 
-import { getPost, getPosts, createPost } from "./db";
+import { getPost, getPosts, editPost, createPost } from "./db";
 
 import { QuillDeltaToHtmlConverter } from "quill-delta-to-html";
 
@@ -27,7 +27,7 @@ app.get("/", async (c) => {
   const posts = await getPosts(c.env);
   console.log(posts);
 
-  return c.html(<Layout title="Blog">i'm a homepage</Layout>);
+  return c.html(<Layout title="Blog"></Layout>);
 });
 
 app.get("/dashboard", async (c) => {
@@ -65,7 +65,7 @@ app.post("/editor/new", async (c) => {
   // Create a new post
   const id = await createPost(c.env, {
     title: "Untitled",
-    is_draft: true,
+    is_published: false,
   });
 
   if (id instanceof Error) {
@@ -135,6 +135,33 @@ app.get("/post/:id", async (c) => {
       </PostView>
     </Layout>,
   );
+});
+
+app.put("/api/save/:id", async (c) => {
+  const id = c.req.param("id");
+  const data = await c.req.formData();
+
+  const newPostData = await editPost(c.env, {
+    id: Number(id),
+    editor_content: data.get("content") ?? undefined,
+  });
+  console.log(newPostData);
+
+  return c.text("Saved");
+});
+
+app.put("/api/publish/:id", async (c) => {
+  const id = c.req.param("id");
+  const data = await c.req.formData();
+
+  const newPostData = await editPost(c.env, {
+    id: Number(id),
+    editor_content: data.get("content") ?? undefined,
+    is_published: true,
+  });
+  console.log(newPostData);
+
+  return c.text("Published");
 });
 
 export default app;

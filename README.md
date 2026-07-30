@@ -49,3 +49,7 @@ Or connect your repo in the Cloudflare dashboard - add a Build setting with comm
 ## Copyright
 
 Licensed under MIT License by `arcmaximizer`. An AI assisted template.
+
+## AI usage
+
+- Refactoring to turn is_draft -> is_published
