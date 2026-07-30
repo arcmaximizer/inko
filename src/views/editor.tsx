@@ -14,7 +14,9 @@ export default function EditorView(props: EditorProps) {
 
       <div class="max-w-screen-2xl mx-auto fixed left-0 right-0 top-0 p-4 flex justify-between">
         <div>
-          <Button>Back</Button>
+          <Button asChild>
+            <a href="/dashboard/posts">Back to dashboard</a>
+          </Button>
         </div>
         <div class="flex flex-col gap-2">
           <Button
@@ -35,7 +37,7 @@ export default function EditorView(props: EditorProps) {
           </Button>
         </div>
       </div>
-      <div class="max-w-screen-xl mx-auto pt-12 pb-8">
+      <div class="max-w-screen-xl mx-auto pt-12 pb-8 px-4">
         <h1 class="text-3xl text-center font-semibold w-fit mx-auto">
           {props.post.title}
         </h1>
@@ -57,13 +59,15 @@ export default function EditorView(props: EditorProps) {
       <script
         dangerouslySetInnerHTML={{
           __html: `
-const quill = new Quill('#editor', {
-  theme: 'snow'
-});
+htmx.onLoad((content) => {
+  const quill = new Quill('#editor', {
+    theme: 'snow'
+  });
 
-const initialContent = ${props.post.editor_content}
+  const initialContent = ${props.post.editor_content}
 
-quill.setContents(initialContent)
+  quill.setContents(initialContent)
+})
 
 function syncQuill() {
   document.getElementById('content').value = JSON.stringify(quill.getContents());

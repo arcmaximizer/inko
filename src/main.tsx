@@ -5,14 +5,14 @@ import type { FC } from "hono/jsx";
 
 import { getPost, getPosts, editPost, createPost } from "./db";
 
-import { QuillDeltaToHtmlConverter } from "quill-delta-to-html";
-
 import Layout from "./components/layout.tsx";
 import PostView from "./views/post.tsx";
 import EditorView from "./views/editor.tsx";
 
 import DashboardLayout from "./views/dashboard.tsx";
 import DashboardPostsView from "./views/dashboard-posts.tsx";
+
+import PostCard from "./components/post-card.tsx";
 
 export type Env = {
   DB: D1Database;
@@ -25,9 +25,16 @@ app.use("*", cors());
 
 app.get("/", async (c) => {
   const posts = await getPosts(c.env);
-  console.log(posts);
 
-  return c.html(<Layout title="Blog"></Layout>);
+  const cards = posts
+    .filter((p) => p.is_published == 1)
+    .map((post) => <PostCard post={post} />);
+
+  return c.html(
+    <Layout title="Blog">
+      <div class="max-w-screen-lg flex flex-col gap-4 p-4">{cards}</div>
+    </Layout>,
+  );
 });
 
 app.get("/dashboard", async (c) => {
@@ -65,7 +72,7 @@ app.post("/editor/new", async (c) => {
   // Create a new post
   const id = await createPost(c.env, {
     title: "Untitled",
-    is_published: false,
+    is_published: 0,
   });
 
   if (id instanceof Error) {
@@ -119,20 +126,13 @@ app.get("/post/:id", async (c) => {
     throw post;
   }
 
-  if (!post || !post.editor_content) {
+  if (!post || !post.editor_content || !post.is_published) {
     return c.html(notFoundPage, 404);
   }
 
-  const delta = JSON.parse(post.editor_content); // the ops array you stored
-
-  const converter = new QuillDeltaToHtmlConverter(delta.ops, {});
-  const html = converter.convert();
-
   return c.html(
     <Layout title="Blog">
-      <PostView title={post.title} desc={post.subtitle ?? ""}>
-        <div dangerouslySetInnerHTML={{ __html: html }} />
-      </PostView>
+      <PostView post={post} />
     </Layout>,
   );
 });
@@ -145,7 +145,6 @@ app.put("/api/save/:id", async (c) => {
     id: Number(id),
     editor_content: data.get("content") ?? undefined,
   });
-  console.log(newPostData);
 
   return c.text("Saved");
 });
@@ -157,9 +156,8 @@ app.put("/api/publish/:id", async (c) => {
   const newPostData = await editPost(c.env, {
     id: Number(id),
     editor_content: data.get("content") ?? undefined,
-    is_published: true,
+    is_published: 1,
   });
-  console.log(newPostData);
 
   return c.text("Published");
 });
