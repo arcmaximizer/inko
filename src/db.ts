@@ -42,7 +42,7 @@ export async function createPost(
   post: Omit<Post, "id" | "updated_at"> & { updated_at?: string },
 ): Promise<number | AppError> {
   const {
-      is_published,
+    is_published,
     title,
     editor_content,
     subtitle,
@@ -57,7 +57,7 @@ export async function createPost(
     "INSERT INTO posts (is_published, title, editor_content, subtitle, post_image_url, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
   )
     .bind(
-    is_published,
+      is_published,
       title,
       editor_content ?? "",
       subtitle ?? null,
@@ -136,4 +136,59 @@ export async function editPost(
   }
 
   return result.results[0] as unknown as Post;
+}
+
+export async function createSession(env: Env): Promise<string> {
+  const id = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO sessions (id) VALUES (?)").bind(id).run();
+  return id;
+}
+
+export async function verifySession(env: Env, id: string): Promise<boolean> {
+  const session = await env.DB.prepare("SELECT * FROM sessions WHERE id = ?")
+    .bind()
+    .first();
+
+  if (session) return true;
+  return false;
+}
+
+export async function deleteSession(env: Env, id: string): Promise<void> {
+  await env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(id).run();
+}
+
+interface Settings {
+  blog_name?: string;
+  admin_username?: string;
+  password_hash?: Uint8Array;
+}
+
+export async function getSettings(env: Env): Promise<Settings | null> {
+  const settings = await env.KV.get(["blog_name", "admin_username"]);
+
+  const password_hash = await env.KV.get("password_hash", {
+    type: "arrayBuffer",
+  });
+
+  return {
+    blog_name: settings.get("blog_name") ?? undefined,
+    admin_username: settings.get("admin_username") ?? undefined,
+    password_hash: password_hash ? new Uint8Array(password_hash) : undefined,
+  };
+}
+
+export async function putSettings(env: Env, settings: Settings): Promise<void> {
+  const pairs = [
+    settings.blog_name
+      ? env.KV.put("blog_name", settings.blog_name)
+      : undefined,
+    settings.admin_username
+      ? env.KV.put("admin_username", settings.admin_username)
+      : undefined,
+    settings.password_hash
+      ? env.KV.put("password_hash", settings.password_hash)
+      : undefined,
+  ];
+
+  await Promise.all(pairs);
 }

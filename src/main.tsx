@@ -3,10 +3,19 @@ import { cors } from "hono/cors";
 
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 
-import type { D1Database } from "@cloudflare/workers-types";
+import type { D1Database, KVNamespace } from "@cloudflare/workers-types";
 import type { FC } from "hono/jsx";
 
-import { getPost, getPosts, editPost, createPost } from "./db";
+import {
+  getPost,
+  getPosts,
+  editPost,
+  createPost,
+  getSettings,
+  putSettings,
+  createSession,
+  verifySession,
+} from "./db";
 
 import Layout from "./components/layout.tsx";
 import PostView from "./views/post.tsx";
@@ -15,12 +24,18 @@ import EditorView from "./views/editor.tsx";
 import DashboardLayout from "./views/dashboard.tsx";
 import DashboardPostsView from "./views/dashboard-posts.tsx";
 
-import LoginView from "./views/login";
+import SetupView from "./views/setup.tsx";
+import LoginView from "./views/login.tsx";
+
+import { hashPassword } from "./password";
 
 import PostCard from "./components/post-card.tsx";
 
+import { error, fault } from "./lib/error";
+
 export type Env = {
   DB: D1Database;
+  KV: KVNamespace;
   ASSETS: Fetcher;
 };
 
@@ -40,6 +55,46 @@ app.get("/", async (c) => {
       <div class="max-w-screen-lg flex flex-col gap-4 p-4">{cards}</div>
     </Layout>,
   );
+});
+
+app.get("/setup", async (c) => {
+  const settings = await getSettings(c.env);
+  if (settings?.admin_username) return c.redirect("/");
+
+  return c.html(
+    <Layout title="Blog">
+      <SetupView />
+    </Layout>,
+  );
+});
+
+app.post("/setup", async (c) => {
+  const settings = await getSettings(c.env);
+
+  // We already did setup
+  if (settings?.admin_username) return c.status(403);
+
+  const data = await c.req.formData();
+
+  const [admin_username, password, blog_name] = [
+    data.get("admin_username"),
+    data.get("password"),
+    data.get("blog_name"),
+  ];
+
+  // Password not hashed clientside - HTMX limitation
+  if (admin_username && password && blog_name) {
+    const digest = await hashPassword(password);
+    await putSettings(c.env, {
+      admin_username,
+      password_hash: digest,
+      blog_name,
+    });
+
+    return c.redirect("/dashboard/posts");
+  } else {
+    return c.status(400);
+  }
 });
 
 app.get("/dashboard", async (c) => {
@@ -83,14 +138,29 @@ app.get("/login", async (c) => {
 
 app.post("/login", async (c) => {
   const data = await c.req.formData();
-  setCookie(c, "Authorization", "access yay");
-  c.header("HX-Redirect", "/dashboard");
+
+  const settings = await getSettings(c.env);
+  if (!settings?.password_hash || !settings?.admin_username)
+    throw error("not set up correctly");
+
+  const [username, password] = [data.get("username"), data.get("password")];
+  if (!username || !password) {
+    return c.status(400);
+  }
+
+  // Non-standard
+  const digest = await hashPassword(password);
+  const isEq = crypto.subtle.timingSafeEqual(settings.password_hash, digest);
+
+  const id = await createSession(c.env);
+
+  setCookie(c, "Auth", id);
+  c.header("HX-Redirect", "/dashboard/posts");
   return c.text("Logged in");
 });
 
 app.post("/logout", async (c) => {
-  const data = await c.req.formData();
-  deleteCookie(c, "Authorization");
+  deleteCookie(c, "Auth");
   c.header("HX-Redirect", "/");
   return c.text("Logged out");
 });
