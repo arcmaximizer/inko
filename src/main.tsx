@@ -1,5 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+
 import type { D1Database } from "@cloudflare/workers-types";
 import type { FC } from "hono/jsx";
 
@@ -11,6 +14,8 @@ import EditorView from "./views/editor.tsx";
 
 import DashboardLayout from "./views/dashboard.tsx";
 import DashboardPostsView from "./views/dashboard-posts.tsx";
+
+import LoginView from "./views/login";
 
 import PostCard from "./components/post-card.tsx";
 
@@ -66,6 +71,28 @@ app.get("/dashboard/settings", async (c) => {
       <DashboardLayout />
     </Layout>,
   );
+});
+
+app.get("/login", async (c) => {
+  return c.html(
+    <Layout title="Blog">
+      <LoginView />
+    </Layout>,
+  );
+});
+
+app.post("/login", async (c) => {
+  const data = await c.req.formData();
+  setCookie(c, "Authorization", "access yay");
+  c.header("HX-Redirect", "/dashboard");
+  return c.text("Logged in");
+});
+
+app.post("/logout", async (c) => {
+  const data = await c.req.formData();
+  deleteCookie(c, "Authorization");
+  c.header("HX-Redirect", "/");
+  return c.text("Logged out");
 });
 
 app.post("/editor/new", async (c) => {

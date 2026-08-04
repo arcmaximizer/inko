@@ -1,4 +1,5 @@
-import NavLink from "../components/navlink.tsx";
+import NavLink from "../components/navlink";
+import Button from "../components/button";
 import type { PropsWithChildren } from "hono/jsx";
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
@@ -17,7 +18,15 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
           </li>
         </ul>
         <div>
-          <NavLink href="/logout">Log out</NavLink>
+          <Button
+            hx-post="/logout"
+            class="w-full"
+            hx-target="body"
+            hx-push-url="/"
+            hx-boost
+          >
+            Log out
+          </Button>
         </div>
       </nav>
       <div class="min-w-36" />
