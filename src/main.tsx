@@ -23,6 +23,7 @@ import EditorView from "./views/editor.tsx";
 
 import DashboardLayout from "./views/dashboard.tsx";
 import DashboardPostsView from "./views/dashboard-posts.tsx";
+import DashboardSettingsView from "./views/dashboard-settings.tsx";
 
 import SetupView from "./views/setup.tsx";
 import LoginView from "./views/login.tsx";
@@ -102,7 +103,10 @@ app.get("/dashboard", async (c) => {
 });
 
 app.get("/dashboard/posts", async (c) => {
-  const posts = await getPosts(c.env);
+  const posts = (await getPosts(c.env)).filter(
+    (post) => post.is_published == 1,
+  );
+
   return c.html(
     <Layout title="Blog">
       <DashboardLayout>
@@ -113,9 +117,15 @@ app.get("/dashboard/posts", async (c) => {
 });
 
 app.get("/dashboard/drafts", async (c) => {
+  const posts = (await getPosts(c.env)).filter(
+    (post) => post.is_published == 0,
+  );
+
   return c.html(
     <Layout title="Blog">
-      <DashboardLayout />
+      <DashboardLayout>
+        <DashboardPostsView title="Drafts" posts={posts} />
+      </DashboardLayout>
     </Layout>,
   );
 });
@@ -123,7 +133,9 @@ app.get("/dashboard/drafts", async (c) => {
 app.get("/dashboard/settings", async (c) => {
   return c.html(
     <Layout title="Blog">
-      <DashboardLayout />
+      <DashboardLayout>
+        <DashboardSettingsView />
+      </DashboardLayout>
     </Layout>,
   );
 });
@@ -177,7 +189,7 @@ app.post("/editor/new", async (c) => {
   }
 
   c.header("HX-Location", "/editor/" + id);
-  return c.text("New post created. ID is " + id);
+  return c.text("New draft created. ID is " + id);
   //return c.redirect("/editor/" + id, 302);
 });
 

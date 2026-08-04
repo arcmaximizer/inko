@@ -3,7 +3,10 @@ import PostCard from "../components/post-card";
 import NavLink from "../components/navlink";
 import Button from "../components/button";
 
-export default function DashboardPostsView({ posts }: DPVProps) {
+export default function DashboardPostsView({
+  posts,
+  title = "Posts",
+}: DPVProps) {
   const cards = posts.map((post) => (
     <li>
       <PostCard href={"/editor/" + post.id} post={post} />
@@ -13,7 +16,9 @@ export default function DashboardPostsView({ posts }: DPVProps) {
   return (
     <div class="p-4 pt-3 max-w-screen-lg w-full">
       <div class="flex items-center gap-4 mb-4">
-        <h1 class="text-xl">Posts ({posts.length})</h1>
+        <h1 class="text-xl">
+          {title} ({posts.length})
+        </h1>
 
         <Button hx-post="/editor/new" hx-target="body">
           Create
@@ -35,4 +40,5 @@ export default function DashboardPostsView({ posts }: DPVProps) {
 
 interface DPVProps {
   posts: Post[];
+  title?: string;
 }
