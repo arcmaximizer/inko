@@ -10,6 +10,7 @@ const Layout = (props: LayoutProps) => {
         <title>{props.title}</title>
         <script src="/htmx.min.js"></script>
         <link rel="stylesheet" href="/style.css" />
+        <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>{" "}
       </head>
 
       <body>

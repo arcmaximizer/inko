@@ -10,7 +10,6 @@ export default function EditorView(props: EditorProps) {
         href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css"
         rel="stylesheet"
       />
-      <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 
       <div class="max-w-screen-2xl mx-auto fixed left-0 right-0 top-0 p-4 flex justify-between">
         <div>
@@ -59,15 +58,16 @@ export default function EditorView(props: EditorProps) {
       <script
         dangerouslySetInnerHTML={{
           __html: `
-htmx.onLoad((content) => {
+
   const quill = new Quill('#editor', {
     theme: 'snow'
   });
 
-  const initialContent = ${props.post.editor_content}
+  // This is really hacky - it's just server side concatenation of JS. TODO: Make this good
+  const initialContent = ${props.post.editor_content || '""'}
 
   quill.setContents(initialContent)
-})
+
 
 function syncQuill() {
   document.getElementById('content').value = JSON.stringify(quill.getContents());

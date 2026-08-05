@@ -15,6 +15,7 @@ import {
   putSettings,
   createSession,
   verifySession,
+  deleteSession,
 } from "./db";
 
 import Layout from "./components/layout.tsx";
@@ -38,11 +39,24 @@ export type Env = {
   DB: D1Database;
   KV: KVNamespace;
   ASSETS: Fetcher;
+  PEPPER: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", cors());
+
+app.use("/dashboard/*", async (c, next) => {
+  const cookie = getCookie(c, "Auth");
+
+  if (cookie) {
+    const session = await verifySession(c.env, cookie);
+    if (session) await next();
+  } else {
+    c.status(401);
+    return c.redirect("/login");
+  }
+});
 
 app.get("/", async (c) => {
   const posts = await getPosts(c.env);
@@ -60,7 +74,7 @@ app.get("/", async (c) => {
 
 app.get("/setup", async (c) => {
   const settings = await getSettings(c.env);
-  if (settings?.admin_username) return c.redirect("/");
+  if (settings?.admin_username) return c.redirect("/dashboard/posts");
 
   return c.html(
     <Layout title="Blog">
@@ -73,7 +87,10 @@ app.post("/setup", async (c) => {
   const settings = await getSettings(c.env);
 
   // We already did setup
-  if (settings?.admin_username) return c.status(403);
+  if (settings?.admin_username) {
+    c.status(403);
+    return c.text("Already set up");
+  }
 
   const data = await c.req.formData();
 
@@ -85,16 +102,20 @@ app.post("/setup", async (c) => {
 
   // Password not hashed clientside - HTMX limitation
   if (admin_username && password && blog_name) {
-    const digest = await hashPassword(password);
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const digest = await hashPassword(password, c.env.PEPPER, salt);
     await putSettings(c.env, {
       admin_username,
       password_hash: digest,
       blog_name,
+      salt,
     });
 
     return c.redirect("/dashboard/posts");
   } else {
-    return c.status(400);
+    c.status(400);
+
+    return c.text("Incorrect data");
   }
 });
 
@@ -141,6 +162,13 @@ app.get("/dashboard/settings", async (c) => {
 });
 
 app.get("/login", async (c) => {
+  const cookie = getCookie(c, "Auth");
+
+  // Verify session
+  if (cookie && (await verifySession(c.env, cookie))) {
+    return c.redirect("/dashboard/posts");
+  }
+
   return c.html(
     <Layout title="Blog">
       <LoginView />
@@ -152,16 +180,19 @@ app.post("/login", async (c) => {
   const data = await c.req.formData();
 
   const settings = await getSettings(c.env);
-  if (!settings?.password_hash || !settings?.admin_username)
+  if (!settings?.password_hash || !settings?.admin_username || !settings?.salt)
     throw error("not set up correctly");
 
   const [username, password] = [data.get("username"), data.get("password")];
   if (!username || !password) {
-    return c.status(400);
+    c.status(400);
+    return c.text("No username or password");
   }
 
-  // Non-standard
-  const digest = await hashPassword(password);
+  // Hash the password w/ salt and pepper
+  const digest = await hashPassword(password, c.env.PEPPER, settings.salt);
+
+  // cf workers - non standard feature
   const isEq = crypto.subtle.timingSafeEqual(settings.password_hash, digest);
 
   const id = await createSession(c.env);
@@ -172,6 +203,9 @@ app.post("/login", async (c) => {
 });
 
 app.post("/logout", async (c) => {
+  const auth = getCookie(c, "Auth");
+  if (auth) await deleteSession(c.env, auth);
+
   deleteCookie(c, "Auth");
   c.header("HX-Redirect", "/");
   return c.text("Logged out");

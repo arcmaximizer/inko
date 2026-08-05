@@ -1,5 +1,5 @@
 name = "htmx-hono-cf-starter"
-compatibility_date = "2024-12-01"
+compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 main = "src/main.ts"
 
@@ -17,3 +17,6 @@ database_id = "inko-data"
 [[kv_namespaces]]
 binding = "KV"
 id = "inko-settings"
+
+[limits]
+cpu_ms = 1000

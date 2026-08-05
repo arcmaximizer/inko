@@ -140,13 +140,19 @@ export async function editPost(
 
 export async function createSession(env: Env): Promise<string> {
   const id = crypto.randomUUID();
-  await env.DB.prepare("INSERT INTO sessions (id) VALUES (?)").bind(id).run();
+
+  const date = new Date().toISOString();
+
+  await env.DB.prepare("INSERT INTO sessions (id, created) VALUES (?, ?)")
+    .bind(id, date)
+    .run();
+
   return id;
 }
 
 export async function verifySession(env: Env, id: string): Promise<boolean> {
   const session = await env.DB.prepare("SELECT * FROM sessions WHERE id = ?")
-    .bind()
+    .bind(id)
     .first();
 
   if (session) return true;
@@ -161,6 +167,7 @@ interface Settings {
   blog_name?: string;
   admin_username?: string;
   password_hash?: Uint8Array;
+  salt?: Uint8Array;
 }
 
 export async function getSettings(env: Env): Promise<Settings | null> {
@@ -170,10 +177,15 @@ export async function getSettings(env: Env): Promise<Settings | null> {
     type: "arrayBuffer",
   });
 
+  const salt = await env.KV.get("salt", {
+    type: "arrayBuffer",
+  });
+
   return {
     blog_name: settings.get("blog_name") ?? undefined,
     admin_username: settings.get("admin_username") ?? undefined,
     password_hash: password_hash ? new Uint8Array(password_hash) : undefined,
+    salt: salt ? new Uint8Array(salt) : undefined,
   };
 }
 
@@ -188,7 +200,10 @@ export async function putSettings(env: Env, settings: Settings): Promise<void> {
     settings.password_hash
       ? env.KV.put("password_hash", settings.password_hash)
       : undefined,
+    settings.salt ? env.KV.put("salt", settings.salt) : undefined,
   ];
+
+  console.log(settings);
 
   await Promise.all(pairs);
 }
