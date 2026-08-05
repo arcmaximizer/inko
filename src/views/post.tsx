@@ -14,7 +14,7 @@ const PostView: FC<PostProps> = (props) => {
   if (!props.post.editor_content) throw error("No post content");
   if (!props.post.is_published) throw error("Not published");
 
-  const delta = JSON.parse(props.post.editor_content); // the ops array you stored
+  const delta = JSON.parse(props.post.editor_content);
 
   const converter = new QuillDeltaToHtmlConverter(delta.ops, {});
   const html = converter.convert();

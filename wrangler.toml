@@ -18,5 +18,9 @@ database_id = "inko-data"
 binding = "KV"
 id = "inko-settings"
 
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "inko-files"
+
 [limits]
 cpu_ms = 1000

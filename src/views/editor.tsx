@@ -1,5 +1,6 @@
 import type { Post } from "../db";
 import Button from "../components/button";
+import ImageInput from "../components/image-input";
 
 export default function EditorView(props: EditorProps) {
   return (
@@ -11,16 +12,18 @@ export default function EditorView(props: EditorProps) {
         rel="stylesheet"
       />
 
-      <div class="max-w-screen-2xl mx-auto fixed left-0 right-0 top-0 p-4 flex justify-between">
+      <div class="max-w-screen-2xl mx-auto fixed left-0 right-0 top-0 p-4 flex justify-between pointer-events-none">
         <div>
           <Button asChild>
-            <a href="/dashboard/posts">Back to dashboard</a>
+            <a href="/dashboard/posts" class="pointer-events-auto">
+              Back to dashboard
+            </a>
           </Button>
         </div>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 pointer-events-auto">
           <Button
             hx-put={"/api/publish/" + props.post.id}
-            hx-include="#content"
+            hx-include="#content, #title, #subtitle"
             hx-trigger="click"
             onclick="syncQuill()"
           >
@@ -28,7 +31,7 @@ export default function EditorView(props: EditorProps) {
           </Button>
           <Button
             hx-put={"/api/save/" + props.post.id}
-            hx-include="#content"
+            hx-include="#content, #title, #subtitle"
             hx-trigger="click"
             onclick="syncQuill()"
           >
@@ -37,20 +40,25 @@ export default function EditorView(props: EditorProps) {
         </div>
       </div>
       <div class="max-w-screen-xl mx-auto pt-12 pb-8 px-4">
-        <h1 class="text-3xl text-center font-semibold w-fit mx-auto">
-          {props.post.title}
-        </h1>
-        <p class="text-center w-fit mx-auto mt-2 mb-2">
-          {props.post.subtitle ?? "Insert subtitle here"}
-        </p>
-        {props.post.post_image_url ? (
-          <img
-            src={props.post.post_image_url}
-            class="w-full mx-auto max-w-screen-sm"
-          />
-        ) : (
-          <div class="w-full aspect-[3/2] border max-w-screen-sm mx-auto" />
-        )}
+        <input
+          class="text-3xl text-center font-semibold w-full max-w-screen-sm mx-auto block"
+          value={props.post.title}
+          type="text"
+          name="title"
+          id="title"
+        ></input>
+        <input
+          class="text-center w-full mx-auto mt-2 max-w-screen-sm mb-2 block"
+          type="text"
+          name="subtitle"
+          id="subtitle"
+          value={props.post.subtitle ?? "Insert subtitle here"}
+        ></input>
+        {/* Following label component taken from Claude (Anthropic) */}
+        <ImageInput
+          post_image_url={props.post.post_image_url}
+          id={props.post.id}
+        />
         <div class="mb-8" />
         <div id="editor"></div>
       </div>

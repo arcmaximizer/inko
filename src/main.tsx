@@ -1,9 +1,13 @@
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 
-import type { D1Database, KVNamespace } from "@cloudflare/workers-types";
+import type {
+  D1Database,
+  KVNamespace,
+  R2Bucket,
+} from "@cloudflare/workers-types";
 import type { FC } from "hono/jsx";
 
 import {
@@ -32,12 +36,14 @@ import LoginView from "./views/login.tsx";
 import { hashPassword } from "./password";
 
 import PostCard from "./components/post-card.tsx";
+import ImageInput from "./components/image-input.tsx";
 
 import { error, fault } from "./lib/error";
 
 export type Env = {
   DB: D1Database;
   KV: KVNamespace;
+  R2: R2Bucket;
   ASSETS: Fetcher;
   PEPPER: string;
 };
@@ -46,7 +52,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.use("*", cors());
 
-app.use("/dashboard/*", async (c, next) => {
+const auth: MiddlewareHandler = async (c, next) => {
   const cookie = getCookie(c, "Auth");
 
   if (cookie) {
@@ -56,7 +62,10 @@ app.use("/dashboard/*", async (c, next) => {
     c.status(401);
     return c.redirect("/login");
   }
-});
+};
+
+app.use("/dashboard/*", auth);
+app.use("/api/*", auth);
 
 app.get("/", async (c) => {
   const settings = await getSettings(c.env);
@@ -73,7 +82,7 @@ app.get("/", async (c) => {
   }
 
   return c.html(
-    <Layout title="Blog">
+    <Layout title={settings.blog_name ?? "Your New Blog"}>
       <div class="max-w-screen-lg flex flex-col gap-4 p-4">{cards}</div>
     </Layout>,
   );
@@ -84,7 +93,7 @@ app.get("/setup", async (c) => {
   if (settings?.admin_username) return c.redirect("/dashboard/posts");
 
   return c.html(
-    <Layout title="Blog">
+    <Layout title={settings?.blog_name ?? "Your New Blog"}>
       <SetupView />
     </Layout>,
   );
@@ -131,12 +140,13 @@ app.get("/dashboard", async (c) => {
 });
 
 app.get("/dashboard/posts", async (c) => {
+  const settings = await getSettings(c.env);
   const posts = (await getPosts(c.env)).filter(
     (post) => post.is_published == 1,
   );
 
   return c.html(
-    <Layout title="Blog">
+    <Layout title={settings?.blog_name ?? "Your New Blog"}>
       <DashboardLayout>
         <DashboardPostsView posts={posts} />
       </DashboardLayout>
@@ -145,12 +155,13 @@ app.get("/dashboard/posts", async (c) => {
 });
 
 app.get("/dashboard/drafts", async (c) => {
+  const settings = await getSettings(c.env);
   const posts = (await getPosts(c.env)).filter(
     (post) => post.is_published == 0,
   );
 
   return c.html(
-    <Layout title="Blog">
+    <Layout title={settings?.blog_name ?? "Your New Blog"}>
       <DashboardLayout>
         <DashboardPostsView title="Drafts" posts={posts} />
       </DashboardLayout>
@@ -159,8 +170,10 @@ app.get("/dashboard/drafts", async (c) => {
 });
 
 app.get("/dashboard/settings", async (c) => {
+  const settings = await getSettings(c.env);
+
   return c.html(
-    <Layout title="Blog">
+    <Layout title={settings?.blog_name ?? "Your New Blog"}>
       <DashboardLayout>
         <DashboardSettingsView />
       </DashboardLayout>
@@ -169,6 +182,7 @@ app.get("/dashboard/settings", async (c) => {
 });
 
 app.get("/login", async (c) => {
+  const settings = await getSettings(c.env);
   const cookie = getCookie(c, "Auth");
 
   // Verify session
@@ -177,7 +191,7 @@ app.get("/login", async (c) => {
   }
 
   return c.html(
-    <Layout title="Blog">
+    <Layout title={settings?.blog_name ?? "Your New Blog"}>
       <LoginView />
     </Layout>,
   );
@@ -235,6 +249,7 @@ app.post("/editor/new", async (c) => {
 });
 
 app.get("/editor/:id", async (c) => {
+  const settings = await getSettings(c.env);
   const id = c.req.param("id");
 
   // Fetch the post
@@ -249,17 +264,19 @@ app.get("/editor/:id", async (c) => {
   }
 
   return c.html(
-    <Layout title="Blog" noHeader>
+    <Layout noHeader title={settings?.blog_name ?? "Your New Blog"}>
       <EditorView post={post} />
     </Layout>,
   );
 });
 
 const errorPage = (
-  <Layout title="Blog">We've experienced a strange error. Apologies!</Layout>
+  <Layout title="return to home">
+    We've experienced a strange error. Apologies!
+  </Layout>
 );
 
-const notFoundPage = <Layout title="Blog">404</Layout>;
+const notFoundPage = <Layout title="return to home">404</Layout>;
 
 app.onError((err, c) => {
   console.error(err);
@@ -267,6 +284,7 @@ app.onError((err, c) => {
 });
 
 app.get("/post/:id", async (c) => {
+  const settings = await getSettings(c.env);
   const id = c.req.param("id");
 
   // Fetch the post
@@ -281,7 +299,7 @@ app.get("/post/:id", async (c) => {
   }
 
   return c.html(
-    <Layout title="Blog">
+    <Layout title={settings?.blog_name ?? "Your New Blog"}>
       <PostView post={post} />
     </Layout>,
   );
@@ -294,6 +312,8 @@ app.put("/api/save/:id", async (c) => {
   const newPostData = await editPost(c.env, {
     id: Number(id),
     editor_content: data.get("content") ?? undefined,
+    title: data.get("title") ?? undefined,
+    subtitle: data.get("subtitle") ?? undefined,
   });
 
   return c.text("Saved");
@@ -307,9 +327,49 @@ app.put("/api/publish/:id", async (c) => {
     id: Number(id),
     editor_content: data.get("content") ?? undefined,
     is_published: 1,
+    title: data.get("title") ?? undefined,
+    subtitle: data.get("subtitle") ?? undefined,
   });
 
   return c.text("Published");
+});
+
+app.put("/api/image/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+
+  const body = await c.req.parseBody();
+  const file = body["post_image"];
+
+  if (file instanceof File == false) {
+    c.status(400);
+    return c.text("No file");
+  }
+
+  const date = Date.now();
+  const object = await c.env.R2.put("image" + id + date, file);
+
+  const post_image_url = "/img/image" + id + date;
+
+  await editPost(c.env, {
+    id,
+    post_image_url,
+  });
+
+  return c.html(<ImageInput id={id} post_image_url={post_image_url} />);
+});
+
+app.get("/img/:key", async (c) => {
+  const obj = await c.env.R2.get(c.req.param("key"));
+  if (!obj) return c.notFound();
+
+  return new Response(obj.body, {
+    headers: {
+      "Content-Type":
+        obj.httpMetadata?.contentType ?? "application/octet-stream",
+      ETag: obj.httpEtag,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
 });
 
 export default app;
