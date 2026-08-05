@@ -59,11 +59,18 @@ app.use("/dashboard/*", async (c, next) => {
 });
 
 app.get("/", async (c) => {
+  const settings = await getSettings(c.env);
   const posts = await getPosts(c.env);
 
-  const cards = posts
+  if (!settings?.admin_username) return c.redirect("/setup");
+
+  let cards = posts
     .filter((p) => p.is_published == 1)
     .map((post) => <PostCard post={post} />);
+
+  if (cards.length == 0) {
+    cards.push(<p>There doesn't seem to be anything here yet.</p>);
+  }
 
   return c.html(
     <Layout title="Blog">
@@ -111,7 +118,7 @@ app.post("/setup", async (c) => {
       salt,
     });
 
-    return c.redirect("/dashboard/posts");
+    return c.redirect("/login");
   } else {
     c.status(400);
 

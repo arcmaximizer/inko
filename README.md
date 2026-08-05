@@ -53,3 +53,4 @@ Licensed under MIT License by `arcmaximizer`. An AI assisted template.
 ## AI usage
 
 - Refactoring to turn is_draft -> is_published
+- hex to bytes library

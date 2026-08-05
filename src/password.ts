@@ -25,7 +25,7 @@ export async function hashPassword(
     "raw",
     normalizedPassword,
     { name: "PBKDF2" },
-    true,
+    false,
     ["deriveBits"],
   );
   const pepperKey = await crypto.subtle.importKey(
