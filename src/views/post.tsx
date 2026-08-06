@@ -7,6 +7,8 @@ import { error, fault } from "../lib/error";
 
 type PostProps = {
   post: Post;
+  blog_title: string;
+  base_uri: string;
   children?: any;
 };
 
@@ -21,6 +23,27 @@ const PostView: FC<PostProps> = (props) => {
 
   return (
     <>
+      {/* Open Graph */}
+      <meta property="og:type" content="article" />
+      <meta property="og:title" content={props.post.title} />
+      <meta property="og:description" content={props.post.subtitle} />
+      <meta
+        property="og:url"
+        content={`${props.base_uri}/posts/${props.post.id}`}
+      />
+      <meta property="og:site_name" content={props.blog_title} />
+
+      {props.post.post_image_url && (
+        <>
+          <meta property="og:image" content={props.post.post_image_url} />
+          <meta property="og:image:alt" content={props.post.title} />
+        </>
+      )}
+      <meta
+        name="twitter:card"
+        content={props.post.post_image_url ? "summary_large_image" : "summary"}
+      />
+
       <div class="max-w-screen-xl mx-auto pt-12 pb-8">
         <h1 class="text-3xl text-center font-semibold w-fit mx-auto">
           {props.post.title}

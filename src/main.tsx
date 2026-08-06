@@ -46,6 +46,7 @@ export type Env = {
   KV: KVNamespace;
   R2: R2Bucket;
   ASSETS: Fetcher;
+  BASE_URI: string;
   PEPPER: string;
 };
 
@@ -330,7 +331,11 @@ app.get("/post/:id", async (c) => {
 
   return c.html(
     <Layout title={settings?.blog_name ?? "Your New Blog"}>
-      <PostView post={post} />
+      <PostView
+        post={post}
+        base_uri={c.env.BASE_URI}
+        blog_title={settings?.blog_name ?? ""}
+      />
     </Layout>,
   );
 });
