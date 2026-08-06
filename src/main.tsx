@@ -21,6 +21,7 @@ import {
   createSession,
   verifySession,
   deleteSession,
+  deleteAllSessionsExcept,
 } from "./db";
 
 import Layout from "./components/layout.tsx";
@@ -183,6 +184,82 @@ app.get("/dashboard/settings", async (c) => {
   );
 });
 
+app.post("/dashboard/settings", async (c) => {
+  const settings = await getSettings(c.env);
+
+  const data = await c.req.formData();
+  console.log(data);
+  const title = data.get("title");
+  if (title) {
+    await putSettings(c.env, {
+      blog_name: title,
+    });
+    return c.html(
+      <>
+        <span id="blog-title" hx-swap-oob="true">
+          {title}
+        </span>
+        <span class="text-green-600">Title changed successfully</span>
+      </>,
+    );
+  } else {
+    return c.html(<span class="text-red-600">No title specified</span>);
+  }
+});
+
+app.post("/dashboard/settings/auth", async (c) => {
+  const settings = await getSettings(c.env);
+
+  if (!settings?.password_hash || !settings?.salt)
+    throw error("not set up correctly");
+
+  const data = await c.req.formData();
+  console.log(data);
+
+  const [old_password, new_password, repeat_new_password] = [
+    data.get("old_password"),
+    data.get("new_password"),
+    data.get("repeat_new_password"),
+  ];
+
+  if (!old_password || !new_password || !repeat_new_password)
+    return c.html(
+      <span class="text-red-600">All fields must be filled in</span>,
+    );
+
+  if (old_password == new_password) {
+    return c.html(
+      <span class="text-red-600">Old password is the same as the new one</span>,
+    );
+  }
+
+  if (new_password != repeat_new_password) {
+    return c.html(<span class="text-red-600">Password not repeated</span>);
+  }
+
+  const digest = await hashPassword(old_password, c.env.PEPPER, settings.salt);
+
+  // cf workers - non standard feature
+  const isEq = crypto.subtle.timingSafeEqual(settings.password_hash, digest);
+
+  if (!isEq)
+    return c.html(<span class="text-red-600">Invalid old password</span>);
+
+  // Rotate salt
+  const newSalt = crypto.getRandomValues(new Uint8Array(16));
+  const newDigest = await hashPassword(new_password, c.env.PEPPER, newSalt);
+
+  await putSettings(c.env, {
+    password_hash: newDigest,
+    salt: newSalt,
+  });
+
+  // byebye all other sessions
+  await deleteAllSessionsExcept(c.env, getCookie(c, "Auth") ?? "");
+
+  return c.html(<span class="text-green-600">Password changed</span>);
+});
+
 app.get("/login", async (c) => {
   const settings = await getSettings(c.env);
   const cookie = getCookie(c, "Auth");
@@ -208,8 +285,9 @@ app.post("/login", async (c) => {
 
   const [username, password] = [data.get("username"), data.get("password")];
   if (!username || !password) {
-    c.status(400);
-    return c.text("No username or password");
+    return c.html(
+      <span class="text-red-600">All fields must be filled in</span>,
+    );
   }
 
   // Hash the password w/ salt and pepper
@@ -217,6 +295,11 @@ app.post("/login", async (c) => {
 
   // cf workers - non standard feature
   const isEq = crypto.subtle.timingSafeEqual(settings.password_hash, digest);
+
+  if (!isEq || settings.admin_username != username)
+    return c.html(
+      <span class="text-red-600">Invalid username or password</span>,
+    );
 
   const id = await createSession(c.env);
 

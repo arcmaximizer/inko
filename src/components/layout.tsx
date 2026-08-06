@@ -17,7 +17,9 @@ const Layout = (props: LayoutProps) => {
         {!props.noHeader && (
           <>
             <header className="fixed text-xl px-4 h-11 py-2 border-b w-full bg-white">
-              <NavLink href="/">{props.title}</NavLink>
+              <NavLink href="/">
+                <span id="blog-title">{props.title}</span>
+              </NavLink>
             </header>
             <div className="h-11" />
           </>

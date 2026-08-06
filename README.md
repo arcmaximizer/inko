@@ -38,9 +38,10 @@ Visit http://localhost:8787 to see your new app!
 - **KV** binding configured for local dev
 - **Static files** served from `public/`
 
-## Deployment
+## Setup & Deployment
 
 ```bash
+bunx wrangler d1 migrations apply DB # --remote
 bun run deploy
 ```
 

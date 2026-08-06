@@ -5,9 +5,8 @@ export default function LoginPage() {
   return (
     <div>
       <form
-        action="/login"
-        method="post"
-        hx-boost
+        hx-post="/login"
+        hx-target="#login-status"
         class="max-w-screen-sm mx-auto mt-24 gap-2"
       >
         <label>
@@ -18,7 +17,8 @@ export default function LoginPage() {
           <p>Password</p>
           <Input type="password" name="password" />
         </label>
-        <Button>Log in</Button>
+        <Button class="my-4">Log in</Button>
+        <p id="login-status" />
       </form>
     </div>
   );

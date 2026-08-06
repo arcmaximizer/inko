@@ -174,6 +174,13 @@ export async function deleteSession(env: Env, id: string): Promise<void> {
   await env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(id).run();
 }
 
+export async function deleteAllSessionsExcept(
+  env: Env,
+  id: string,
+): Promise<void> {
+  await env.DB.prepare("DELETE FROM sessions WHERE id != ?").bind(id).run();
+}
+
 interface Settings {
   blog_name?: string;
   admin_username?: string;
@@ -213,8 +220,6 @@ export async function putSettings(env: Env, settings: Settings): Promise<void> {
       : undefined,
     settings.salt ? env.KV.put("salt", settings.salt) : undefined,
   ];
-
-  console.log(settings);
 
   await Promise.all(pairs);
 }
