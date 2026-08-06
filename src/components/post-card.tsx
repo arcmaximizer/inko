@@ -10,7 +10,8 @@ export default function PostCard(props: PostCardProps) {
   const href = `/post/${post.id}`;
 
   const date = new Date(
-    (post.is_published ? post.published_at : post.updated_at) ?? post.updated_at,
+    (post.is_published ? post.published_at : post.updated_at) ??
+      post.updated_at,
   );
 
   return (
@@ -34,6 +35,7 @@ export default function PostCard(props: PostCardProps) {
             : `Last updated ${date.toLocaleString()}`}
         </p>
         <p>{post.subtitle}</p>
+        {props.children}
       </div>
     </div>
   );

@@ -20,24 +20,29 @@ const PostView: FC<PostProps> = (props) => {
   const html = converter.convert();
 
   return (
-    <div class="max-w-screen-xl mx-auto pt-12 pb-8">
-      <h1 class="text-3xl text-center font-semibold w-fit mx-auto">
-        {props.post.title}
-      </h1>
-      <p class="text-center w-fit mx-auto mt-2 mb-2">
-        {props.post.subtitle ?? ""}
-      </p>
-      {props.post.post_image_url ? (
-        <img
-          src={props.post.post_image_url}
-          class="w-full mx-auto max-w-screen-sm"
+    <>
+      <div class="max-w-screen-xl mx-auto pt-12 pb-8">
+        <h1 class="text-3xl text-center font-semibold w-fit mx-auto">
+          {props.post.title}
+        </h1>
+        <p class="text-center w-fit mx-auto mt-2 mb-2">
+          {props.post.subtitle ?? ""}
+        </p>
+        {props.post.post_image_url ? (
+          <img
+            src={props.post.post_image_url}
+            class="w-full mx-auto max-w-screen-sm"
+          />
+        ) : (
+          <hr class="my-4" />
+        )}
+        <div class="mb-8" />
+        <div
+          class="prose px-4 pb-4"
+          dangerouslySetInnerHTML={{ __html: html }}
         />
-      ) : (
-        <hr class="my-4" />
-      )}
-      <div class="mb-8" />
-      <div class="prose px-4 pb-4" dangerouslySetInnerHTML={{ __html: html }} />
-    </div>
+      </div>
+    </>
   );
 };
 

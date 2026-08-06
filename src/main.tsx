@@ -15,6 +15,7 @@ import {
   getPosts,
   editPost,
   createPost,
+  deletePost,
   getSettings,
   putSettings,
   createSession,
@@ -267,6 +268,35 @@ app.get("/editor/:id", async (c) => {
     <Layout noHeader title={settings?.blog_name ?? "Your New Blog"}>
       <EditorView post={post} />
     </Layout>,
+  );
+});
+
+app.delete("/editor/:id", async (c) => {
+  const id = c.req.param("id");
+
+  const posts = await getPosts(c.env);
+
+  const post = posts.filter((p) => p.id == Number(id));
+
+  const result = await deletePost(c.env, Number(id));
+
+  if (result instanceof Error) {
+    c.status(404);
+    return c.body(null);
+  }
+
+  const published = post[0]?.is_published == 0;
+
+  return c.html(
+    <>
+      <h1 class="text-xl" id="post-count" hx-swap-oob="true">
+        {published ? "Drafts" : "Posts"} (
+        {published
+          ? posts.filter((p) => p.is_published == 1).length
+          : posts.filter((p) => p.is_published == 0).length}
+        )
+      </h1>
+    </>,
   );
 });
 

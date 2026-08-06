@@ -70,6 +70,17 @@ export async function createPost(
   return result?.id as number;
 }
 
+export async function deletePost(
+  env: Env,
+  id: number,
+): Promise<void | AppError> {
+  const result = await env.DB.prepare("DELETE FROM posts WHERE id = ?")
+    .bind(id)
+    .run();
+
+  if (!result.meta.changes) return error("No post exists");
+}
+
 export async function editPost(
   env: Env,
   data: Partial<Omit<Post, "id">> & { id: number },

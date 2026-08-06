@@ -9,14 +9,23 @@ export default function DashboardPostsView({
 }: DPVProps) {
   const cards = posts.map((post) => (
     <li>
-      <PostCard href={"/editor/" + post.id} post={post} />
+      <PostCard href={"/editor/" + post.id} post={post}>
+        <Button
+          hx-delete={`/editor/${post.id}`}
+          hx-target="closest li"
+          hx-swap="outerHTML"
+          hx-confirm="Delete this post?"
+        >
+          Delete
+        </Button>
+      </PostCard>
     </li>
   ));
 
   return (
     <div class="p-4 pt-3 max-w-screen-lg w-full">
       <div class="flex items-center gap-4 mb-4">
-        <h1 class="text-xl">
+        <h1 class="text-xl" id="post-count">
           {title} ({posts.length})
         </h1>
 
