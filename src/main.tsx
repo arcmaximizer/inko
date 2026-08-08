@@ -60,7 +60,12 @@ const auth: MiddlewareHandler = async (c, next) => {
 
   if (cookie) {
     const session = await verifySession(c.env, cookie);
-    if (session) await next();
+    if (session) {
+      await next();
+    } else {
+      c.status(401);
+      return c.redirect("/login");
+    }
   } else {
     c.status(401);
     return c.redirect("/login");
