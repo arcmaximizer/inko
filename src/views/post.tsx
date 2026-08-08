@@ -61,7 +61,7 @@ const PostView: FC<PostProps> = (props) => {
         )}
         <div class="mb-8" />
         <div
-          class="prose px-4 pb-4"
+          class="prose max-w-200 px-4 pb-4 w-full mx-auto"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>
