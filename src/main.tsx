@@ -361,6 +361,11 @@ app.get("/editor/:id", async (c) => {
 app.delete("/editor/:id", async (c) => {
   const id = c.req.param("id");
 
+  if (!Number.isInteger(Number(id)) || Number(id) < 1) {
+    c.status(400);
+    return c.body(null);
+  }
+
   const posts = await getPosts(c.env);
 
   const post = posts.filter((p) => p.id == Number(id));
