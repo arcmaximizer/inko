@@ -372,15 +372,15 @@ app.delete("/editor/:id", async (c) => {
     return c.body(null);
   }
 
-  const published = post[0]?.is_published == 0;
+  const published = post[0]?.is_published == 1;
 
   return c.html(
     <>
       <h1 class="text-xl" id="post-count" hx-swap-oob="true">
-        {published ? "Drafts" : "Posts"} (
+        {published ? "Posts" : "Drafts"} (
         {published
-          ? posts.filter((p) => p.is_published == 1).length
-          : posts.filter((p) => p.is_published == 0).length}
+          ? posts.filter((p) => p.is_published == 0).length
+          : posts.filter((p) => p.is_published == 1).length}
         )
       </h1>
     </>,
@@ -467,14 +467,20 @@ app.put("/api/image/:id", async (c) => {
   }
 
   const date = Date.now();
-  const object = await c.env.R2.put("image" + id + date, file);
 
   const post_image_url = "/img/image" + id + date;
 
-  await editPost(c.env, {
+  const pv = await editPost(c.env, {
     id,
     post_image_url,
   });
+
+  if (pv instanceof Error) {
+    c.status(400);
+    return c.text("No ID");
+  }
+
+  const object = await c.env.R2.put("image" + id + date, file);
 
   return c.html(<ImageInput id={id} post_image_url={post_image_url} />);
 });
