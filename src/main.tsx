@@ -103,6 +103,7 @@ app.get("/setup", async (c) => {
 });
 
 app.post("/setup", async (c) => {
+  // TOCTOU
   const settings = await getSettings(c.env);
 
   // We already did setup
@@ -119,7 +120,7 @@ app.post("/setup", async (c) => {
     data.get("blog_name"),
   ];
 
-  // Password not hashed clientside - HTMX limitation
+  // Password not hashed clientside - simplicity reasons
   if (admin_username && password && blog_name) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const digest = await hashPassword(password, c.env.PEPPER, salt);
@@ -185,10 +186,8 @@ app.get("/dashboard/settings", async (c) => {
 });
 
 app.post("/dashboard/settings", async (c) => {
-  const settings = await getSettings(c.env);
-
   const data = await c.req.formData();
-  console.log(data);
+
   const title = data.get("title");
   if (title) {
     await putSettings(c.env, {
@@ -214,7 +213,6 @@ app.post("/dashboard/settings/auth", async (c) => {
     throw error("not set up correctly");
 
   const data = await c.req.formData();
-  console.log(data);
 
   const [old_password, new_password, repeat_new_password] = [
     data.get("old_password"),

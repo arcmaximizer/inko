@@ -9,6 +9,8 @@ const variantClasses = {
   link: "text-blue-600 underline hover:text-blue-800",
 };
 
+// This component was written with LLM assistance from DeepSeek V4 Pro
+
 export default function Button(
   props: PropsWithChildren<JSX.IntrinsicElements["button"]> & {
     variant?: "default" | "link";
